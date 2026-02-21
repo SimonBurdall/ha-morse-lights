@@ -1,0 +1,119 @@
+alias: Morse Code Lights
+description: >
+  Send a message in morse code via a light switch or group.
+  Supports A-Z, 0-9, and spaces.
+icon: mdi:lightbulb-on
+mode: single
+max_exceeded: silent
+
+fields:
+  light_entity:
+    name: Light Switch Entity
+    description: The entity ID of the switch controlling the light.
+    required: true
+    example: switch.office_switch_0
+    selector:
+      entity:
+        domain: switch
+
+  message:
+    name: Message
+    description: Enter morse code message. Supports A-Z, 0-9, and spaces.
+    required: true
+    example: "hello"
+    selector:
+      text:
+
+  unit_time:
+    name: Unit Time (ms)
+    description: Duration of one dot in milliseconds. Everything is derived from this variable.
+    default: 300
+    required: false
+    selector:
+      number:
+        min: 100
+        max: 2000
+        step: 50
+        unit_of_measurement: ms
+
+  restore_on_complete:
+    name: Restore Light State
+    description: Return the target light to its original state.
+    default: true
+    required: false
+    selector:
+      boolean:
+
+sequence:
+  - variables:
+      was_on: "{{ states(light_entity) == 'on' }}"
+      unit_ms: "{{ unit_time | default(300) | int }}"
+
+  - service: switch.turn_off
+    target:
+      entity_id: "{{ light_entity }}"
+
+  - delay:
+      milliseconds: "{{ unit_ms * 2 }}"
+
+  - repeat:
+      count: "{{ message | upper | length }}"
+      sequence:
+        - variables:
+            current_char: "{{ (message | upper)[repeat.index - 1] }}"
+            char_code: >
+              {{ {
+                'A': '.-',   'B': '-...', 'C': '-.-.', 'D': '-..',
+                'E': '.',    'F': '..-.', 'G': '--.',  'H': '....',
+                'I': '..',   'J': '.---', 'K': '-.-',  'L': '.-..',
+                'M': '--',   'N': '-.',   'O': '---',  'P': '.--.',
+                'Q': '--.-', 'R': '.-.',  'S': '...',  'T': '-',
+                'U': '..-',  'V': '...-', 'W': '.--',  'X': '-..-',
+                'Y': '-.--', 'Z': '--..',
+                '0': '-----', '1': '.----', '2': '..---', '3': '...--',
+                '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+                '8': '---..',  '9': '----.'
+              }.get((message | upper)[repeat.index - 1], '') }}
+
+        - choose:
+            - conditions: "{{ current_char == ' ' }}"
+              sequence:
+                - delay:
+                    milliseconds: "{{ unit_ms * 4 }}"
+
+          default:
+            - repeat:
+                count: "{{ char_code | length }}"
+                sequence:
+                  - variables:
+                      current_symbol: "{{ char_code[repeat.index - 1] }}"
+
+                  - service: switch.turn_on
+                    target:
+                      entity_id: "{{ light_entity }}"
+
+                  - delay:
+                      milliseconds: >
+                        {{ (unit_ms * 3) if current_symbol == '-' else unit_ms }}
+
+                  - service: switch.turn_off
+                    target:
+                      entity_id: "{{ light_entity }}"
+
+                  - delay:
+                      milliseconds: "{{ unit_ms }}"
+
+            - delay:
+                milliseconds: "{{ unit_ms * 2 }}"
+
+  - choose:
+      - conditions: "{{ restore_on_complete | default(true) and was_on }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: "{{ light_entity }}"
+      - conditions: "{{ restore_on_complete | default(true) and not was_on }}"
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: "{{ light_entity }}"
