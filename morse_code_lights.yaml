@@ -1,7 +1,7 @@
 alias: Morse Code Lights
 description: >
-  Send a message in morse code via a light switch or group.
-  Supports A-Z, 0-9, and spaces.
+  Send a message in morse code via a light switch or group. Supports A-Z, 0-9,
+  and spaces.
 icon: mdi:lightbulb-on
 mode: single
 max_exceeded: silent
@@ -20,13 +20,15 @@ fields:
     name: Message
     description: Enter morse code message. Supports A-Z, 0-9, and spaces.
     required: true
-    example: "hello"
+    example: hello
     selector:
       text:
 
   unit_time:
     name: Unit Time (ms)
-    description: Duration of one dot in milliseconds. Everything is derived from this variable.
+    description: >-
+      Duration of one dot in milliseconds. Everything is derived from this
+      variable.
     default: 300
     required: false
     selector:
@@ -63,16 +65,16 @@ sequence:
             current_char: "{{ (message | upper)[repeat.index - 1] }}"
             char_code: >
               {{ {
-                'A': '.-',   'B': '-...', 'C': '-.-.', 'D': '-..',
-                'E': '.',    'F': '..-.', 'G': '--.',  'H': '....',
-                'I': '..',   'J': '.---', 'K': '-.-',  'L': '.-..',
-                'M': '--',   'N': '-.',   'O': '---',  'P': '.--.',
-                'Q': '--.-', 'R': '.-.',  'S': '...',  'T': '-',
-                'U': '..-',  'V': '...-', 'W': '.--',  'X': '-..-',
-                'Y': '-.--', 'Z': '--..',
-                '0': '-----', '1': '.----', '2': '..---', '3': '...--',
-                '4': '....-', '5': '.....', '6': '-....', '7': '--...',
-                '8': '---..',  '9': '----.'
+                'A': 'da',   'B': 'addd', 'C': 'adad', 'D': 'add',
+                'E': 'd',    'F': 'ddad', 'G': 'aad',  'H': 'dddd',
+                'I': 'dd',   'J': 'daaa', 'K': 'ada',  'L': 'dadd',
+                'M': 'aa',   'N': 'ad',   'O': 'aaa',  'P': 'daad',
+                'Q': 'aada', 'R': 'dad',  'S': 'ddd',  'T': 'a',
+                'U': 'dda',  'V': 'ddda', 'W': 'daa',  'X': 'adda',
+                'Y': 'adaa', 'Z': 'aadd',
+                '0': 'aaaaa', '1': 'daaaa', '2': 'ddaaa', '3': 'dddaa',
+                '4': 'dddda', '5': 'ddddd', '6': 'adddd', '7': 'aaddd',
+                '8': 'aaadd', '9': 'aaaad'
               }.get((message | upper)[repeat.index - 1], '') }}
 
         - choose:
@@ -94,7 +96,7 @@ sequence:
 
                   - delay:
                       milliseconds: >
-                        {{ (unit_ms * 3) if current_symbol == '-' else unit_ms }}
+                        {{ (unit_ms * 3) if current_symbol == 'a' else unit_ms }}
 
                   - service: switch.turn_off
                     target:
